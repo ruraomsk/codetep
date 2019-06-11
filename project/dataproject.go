@@ -2,6 +2,7 @@ package project
 
 import (
 	"encoding/json"
+	"encoding/xml"
 )
 
 //Project описание одного проекта системы
@@ -50,6 +51,10 @@ func (p *Project) ToString() string {
 		for _, v := range subt.Variables {
 			result += v.ToString() + "\n"
 		}
+		result += "Saves:\n"
+		for _, s := range subt.MapSaves {
+			result += s.ToString() + "\n"
+		}
 	}
 
 	return result
@@ -68,6 +73,8 @@ type Subsystem struct {
 	Modbuses     []Modbus     `xml:"modbus" json:"modbus"`
 	Delay        Delay        `xml:"delay" json:"delay"`
 	Variables    map[string]Variable
+	MapSaves     map[string]Save
+	RealDevices  map[string]Device
 }
 
 //ToString подсистему в строку
@@ -127,7 +134,7 @@ type Saves struct {
 
 //Devices Путь описание списка всех устройств
 type Devices struct {
-	XML string `xml:"xml" json:"xml"`
+	XML string `xml:"xml,attr" json:"xml"`
 }
 
 //Modbus описание интерфейса мModBus подситемы
@@ -146,13 +153,20 @@ func (m *Modbus) ToString() string {
 	return "\t" + m.Name + "\t:" + m.Description + "\t\t\t" + m.Type + "\t" + m.Port + "\t" + m.Slave + "\t" + m.Step + "\t" + m.XMLModbus
 }
 
-//Device Перечень драйверов и закрепление переменных на них
+//DevicesXML struct
+type DevicesXML struct {
+	DevicesHead xml.Name `xml:"devices"`
+	XML         string   `xml:"xml,attr"`
+	Devices     []Device `xml:"device"`
+}
+
+//Device Перечень драйверов
 type Device struct {
 	Name        string `xml:"name,attr" json:"name"`
 	Description string `xml:"description,attr" json:"desription"`
 	Driver      string `xml:"driver,attr" json:"driver"`
 	Slot        string `xml:"slot,attr" json:"slot"`
-	Defs        []Def  `xml:"def" json:"def"`
+	Defs        []Def
 }
 
 //ToString возвращает в символьном виде
@@ -177,13 +191,12 @@ func (d *Def) ToString() string {
 
 //Saved сохранениеи переменных на внешний носитель
 type Saved struct {
-	NameFile string `xml:"name,attr" json:"namefile"`
-	Saves    []Save `xml:"save" json:"save"`
+	Saves []Save `xml:"save" json:"save"`
 }
 
 //ToString возвращает в символьном виде
 func (s *Saved) ToString() string {
-	result := "Saved " + s.NameFile + "\n"
+	result := "Saved " + "\n"
 	for _, sav := range s.Saves {
 		result += sav.ToString()
 	}
@@ -226,4 +239,15 @@ type Variable struct {
 //ToString возвращает в символьном виде
 func (v *Variable) ToString() string {
 	return "\t" + v.Name + "\t:" + v.Description + "\t" + v.Format + "\t" + v.Size + "\n"
+}
+
+//Assign struct for assign vars
+type Assign struct {
+	Assign  xml.Name         `xml:"assign"`
+	Devices xml.StartElement `xml:",any"`
+}
+
+//NameDev struct for saving defs
+type NameDev struct {
+	Defs []Def `xml:"def"`
 }

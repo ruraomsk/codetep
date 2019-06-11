@@ -58,6 +58,48 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 			for _, v := range vars.ListVariable {
 				subb.Variables[v.Name] = v
 			}
+			namefile = p.Path + "/" + sub.Path + "/" + subb.Saves.XML + ".xml"
+			buf, err = ioutil.ReadFile(namefile)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+			var saves = new(Saved)
+			subb.MapSaves = make(map[string]Save)
+			err = xml.Unmarshal(buf, &saves)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+			for _, s := range saves.Saves {
+				subb.MapSaves[s.Name] = s
+			}
+			namefile = p.Path + "/" + sub.Path + "/" + subb.Devices.XML + ".xml"
+			buf, err = ioutil.ReadFile(namefile)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+			subb.RealDevices = make(map[string]Device)
+			devXML := new(DevicesXML)
+			err = xml.Unmarshal(buf, &devXML)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+			namefile = p.Path + "/" + sub.Path + "/" + devXML.XML + ".xml"
+			buf, err = ioutil.ReadFile(namefile)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+			assign := new(Assign)
+			err = xml.Unmarshal(buf, &assign)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+
 			return subb, err
 		}
 	}
