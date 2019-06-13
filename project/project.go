@@ -35,6 +35,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 		// fmt.Println(sub.Name)
 		if sub.Name == name {
 			subb := new(Subsystem)
+			subb.Name = name
 			namefile := p.Path + "/" + sub.Path + "/" + sub.File + ".xml"
 			buf, err := ioutil.ReadFile(namefile)
 			if err != nil {
@@ -87,19 +88,11 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 				fmt.Println(err.Error())
 				return nil, err
 			}
+			for _, dev := range devXML.Devices {
+				subb.RealDevices[dev.Name] = dev
+			}
 			namefile = p.Path + "/" + sub.Path + "/" + devXML.XML + ".xml"
-			buf, err = ioutil.ReadFile(namefile)
-			if err != nil {
-				fmt.Println(err.Error())
-				return nil, err
-			}
-			assign := new(Assign)
-			err = xml.Unmarshal(buf, &assign)
-			if err != nil {
-				fmt.Println(err.Error())
-				return nil, err
-			}
-
+			subb.LoadAssign(namefile)
 			return subb, err
 		}
 	}

@@ -55,6 +55,10 @@ func (p *Project) ToString() string {
 		for _, s := range subt.MapSaves {
 			result += s.ToString() + "\n"
 		}
+		result += "Devices:\n"
+		for _, rd := range subt.RealDevices {
+			result += rd.ToString() + "\n"
+		}
 	}
 
 	return result
@@ -62,6 +66,7 @@ func (p *Project) ToString() string {
 
 //Subsystem описание подсистемы
 type Subsystem struct {
+	Name         string
 	Model        Model        `xml:"model" json:"model"`
 	Netblkey     Netblkey     `xml:"netblkey" json:"netblkey"`
 	Result       Result       `xml:"result" json:"result"`
@@ -239,15 +244,4 @@ type Variable struct {
 //ToString возвращает в символьном виде
 func (v *Variable) ToString() string {
 	return "\t" + v.Name + "\t:" + v.Description + "\t" + v.Format + "\t" + v.Size + "\n"
-}
-
-//Assign struct for assign vars
-type Assign struct {
-	Assign  xml.Name         `xml:"assign"`
-	Devices xml.StartElement `xml:",any"`
-}
-
-//NameDev struct for saving defs
-type NameDev struct {
-	Defs []Def `xml:"def"`
 }

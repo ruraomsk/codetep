@@ -1,12 +1,14 @@
 package project
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/R358/xmldoc"
 	"github.com/clbanning/mxj"
 )
 
@@ -114,5 +116,55 @@ func (t *DriverXML) SaveXML(path string) error {
 	defer file.Close()
 	_, err = file.Write(result)
 	return err
+
+}
+func textValue(node xmldoc.XDNode) string {
+	if ele, ok := node.(*xmldoc.XDElement); ok {
+		b := &bytes.Buffer{}
+		ele.TraverseChildren(func(child xmldoc.XDNode) (stop bool) {
+			if child.GetType() == xmldoc.CDataType {
+				b.Write(child.(*xmldoc.XDCData).Data)
+			}
+			return stop
+		})
+		return b.String()
+	}
+	return ""
+}
+
+//LoadAssign загружает для устройства таблицу назначений
+func (s *Subsystem) LoadAssign(path string) (err error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	doc, err := xmldoc.Parse(file)
+	for _, child := range doc.Root.Children {
+		if child.GetName().String() == "" {
+			continue
+		}
+		if child.GetType() == xmldoc.ElementType {
+			dev := child.GetName().String()
+			rd, ok := s.RealDevices[dev]
+			// rd.Defs = make([]Def, 100)
+			if !ok {
+				return fmt.Errorf("Error нет устройсва " + dev + " в подсистеме " + s.Name)
+			}
+			if newChild, ok := child.(*xmldoc.XDElement); ok {
+				for _, ass := range newChild.Children {
+					if ass.GetName().String() == "" {
+						continue
+					}
+					assign, _ := ass.(*xmldoc.XDElement)
+					name := xmldoc.XDName{LocalName: "name"}
+					def := Def{Name: assign.Attributes[name], DriverName: textValue(ass)}
+					rd.Defs = append(rd.Defs, def)
+				}
+
+			}
+			s.RealDevices[dev] = rd
+		}
+	}
+	return nil
 
 }
