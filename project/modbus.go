@@ -29,6 +29,8 @@ func (r *Register) ToString() string {
 
 //LoadModbusTable загрузка таблицы описания модбаса
 func LoadModbusTable(namefile string) (*TableXML, error) {
+	namefile = RepairPath(namefile)
+
 	t := new(TableXML)
 	buf, err := ioutil.ReadFile(namefile)
 	if err != nil {
@@ -77,6 +79,7 @@ func (t *TableXML) UpdateRegisters(regs Registers) {
 
 //SaveTable сохраняет таблицу в формате XML
 func (t *TableXML) SaveTable(path string) error {
+	path=RepairPath(path)
 	result, err := xml.Marshal(t)
 	if err != nil {
 		fmt.Println("Error !" + err.Error())

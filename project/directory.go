@@ -14,6 +14,7 @@ import (
 
 //LoadAllDrivers загружает все драйвера
 func LoadAllDrivers(path string) (Drivers, error) {
+	path=RepairPath(path)
 	drvs := new(Drivers)
 	drvs.Drivers = make(map[string]DriverXML)
 	dirs, err := ioutil.ReadDir(path)
@@ -41,6 +42,8 @@ func LoadAllDrivers(path string) (Drivers, error) {
 
 //LoadDriverTable загрузка таблицы описания драйвера
 func LoadDriverTable(namefile string) (*DriverXML, error) {
+	namefile=RepairPath(namefile)
+
 	t := new(DriverXML)
 	buf, err := ioutil.ReadFile(namefile)
 	if err != nil {
@@ -57,6 +60,7 @@ func LoadDriverTable(namefile string) (*DriverXML, error) {
 //LoadAllModels load all models fro path dir
 func LoadAllModels(path string) (map[string]ModelXML, error) {
 	Result := make(map[string]ModelXML)
+	path=RepairPath(path)
 	dirs, err := ioutil.ReadDir(path)
 	if err != nil {
 		err = fmt.Errorf("Error! Ошибка чтения каталога %s %s ", path, err.Error())
@@ -67,7 +71,7 @@ func LoadAllModels(path string) (map[string]ModelXML, error) {
 		if file.IsDir() {
 			continue
 		}
-		npath := path + file.Name()
+		npath := RepairPath(path + file.Name())
 		model, err := LoadModel(npath)
 		if err != nil {
 			err = fmt.Errorf("Error Ошибка загрузки модули %s %s", npath, err.Error())
@@ -84,6 +88,7 @@ func LoadAllModels(path string) (map[string]ModelXML, error) {
 //LoadModel load from XML one model
 func LoadModel(namefile string) (*ModelXML, error) {
 	t := new(ModelXML)
+	namefile=RepairPath(namefile)
 	buf, err := ioutil.ReadFile(namefile)
 	if err != nil {
 		err = fmt.Errorf("Error! " + err.Error())
@@ -98,6 +103,7 @@ func LoadModel(namefile string) (*ModelXML, error) {
 
 //SaveXML сохраняет в XML
 func (t *DriverXML) SaveXML(path string) error {
+	path=RepairPath(path)
 	result, err := xml.Marshal(t)
 	if err != nil {
 		fmt.Println("Error !" + err.Error())
@@ -134,6 +140,7 @@ func textValue(node xmldoc.XDNode) string {
 
 //LoadAssign загружает для устройства таблицу назначений
 func (s *Subsystem) LoadAssign(path string) (err error) {
+	path = RepairPath(path)
 	file, err := os.Open(path)
 	if err != nil {
 		return
@@ -167,4 +174,9 @@ func (s *Subsystem) LoadAssign(path string) (err error) {
 	}
 	return nil
 
+}
+
+//RepairPath правит обратные косые на обычные
+func RepairPath(path string) string {
+	return strings.Replace(path, "\\", "/", -1)
 }

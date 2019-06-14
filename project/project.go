@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"strings"
 )
 
 //LoadProject загружает заголовок конкретного проекта
@@ -36,7 +37,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 		if sub.Name == name {
 			subb := new(Subsystem)
 			subb.Name = name
-			namefile := p.Path + "/" + sub.Path + "/" + sub.File + ".xml"
+			namefile := RepairPath(p.Path + "/" + sub.Path + "/" + sub.File + ".xml")
 			buf, err := ioutil.ReadFile(namefile)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -47,7 +48,8 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 				fmt.Println("Error! " + err.Error())
 				return nil, err
 			}
-			namefile = p.Path + "/" + sub.Path + "/" + subb.VariableFile.XML + ".xml"
+			//Load Variables section
+			namefile = RepairPath(p.Path + "/" + sub.Path + "/" + subb.VariableFile.XML + ".xml")
 			buf, err = ioutil.ReadFile(namefile)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -59,7 +61,8 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 			for _, v := range vars.ListVariable {
 				subb.Variables[v.Name] = v
 			}
-			namefile = p.Path + "/" + sub.Path + "/" + subb.Saves.XML + ".xml"
+			//Load Saves section
+			namefile = RepairPath(p.Path + "/" + sub.Path + "/" + subb.Saves.XML + ".xml")
 			buf, err = ioutil.ReadFile(namefile)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -75,7 +78,8 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 			for _, s := range saves.Saves {
 				subb.MapSaves[s.Name] = s
 			}
-			namefile = p.Path + "/" + sub.Path + "/" + subb.Devices.XML + ".xml"
+			//Load Devices section
+			namefile = RepairPath(p.Path + "/" + sub.Path + "/" + subb.Devices.XML + ".xml")
 			buf, err = ioutil.ReadFile(namefile)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -91,8 +95,26 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 			for _, dev := range devXML.Devices {
 				subb.RealDevices[dev.Name] = dev
 			}
-			namefile = p.Path + "/" + sub.Path + "/" + devXML.XML + ".xml"
+			//Load Assign Device section
+			namefile = RepairPath(p.Path + "/" + sub.Path + "/" + devXML.XML + ".xml")
 			subb.LoadAssign(namefile)
+			//Load Modbus section
+			for i, m := range subb.Modbuses {
+				if strings.Contains(m.XMLModbus, ".xml") {
+					namefile = RepairPath(p.Path + "/" + sub.Path + "/" + m.XMLModbus)
+
+				} else {
+					namefile = RepairPath(p.Path + "/" + sub.Path + "/" + m.XMLModbus + ".xml")
+
+				}
+				table, err := LoadModbusTable(namefile)
+				if err != nil {
+					return nil, err
+				}
+				m.Registers = table.GetRegisters(m.Name, m.Description).MapRegs
+				subb.Modbuses[i] = m
+			}
+
 			return subb, err
 		}
 	}

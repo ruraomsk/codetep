@@ -151,11 +151,16 @@ type Modbus struct {
 	Slave       string `xml:"slave,attr,omitempty" json:"slave"`
 	Step        string `xml:"step,attr,omitempty" json:"step"`
 	XMLModbus   string `xml:"xml,attr,omitempty" json:"xml"`
+	Registers   map[string]Register
 }
 
 //ToString возвращает в символьном виде
 func (m *Modbus) ToString() string {
-	return "\t" + m.Name + "\t:" + m.Description + "\t\t\t" + m.Type + "\t" + m.Port + "\t" + m.Slave + "\t" + m.Step + "\t" + m.XMLModbus
+	result := "\t" + m.Name + "\t:" + m.Description + "\t\t\t" + m.Type + "\t" + m.Port + "\t" + m.Slave + "\t" + m.Step + "\t" + m.XMLModbus + "\n"
+	for _, reg := range m.Registers {
+		result += reg.ToString()
+	}
+	return result
 }
 
 //DevicesXML struct
