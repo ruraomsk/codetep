@@ -8,7 +8,7 @@ type subVariable struct {
 }
 
 //VerifyAllVariables check all Variables into project
-func (pr *Project) VerifyAllVariables() string {
+func (pr *Project) VerifyAllVariables(drvs Drivers) string {
 	result := ""
 	// TODO: Вначале проверяем переменные все они с одним именем должны быть одного типа
 	vars := make(map[string]subVariable, 10000)
@@ -54,11 +54,22 @@ func (pr *Project) VerifyAllVariables() string {
 	// TODO: Потом проверяем все назначения на устройства со стороны переменных
 	for _, sub := range pr.Subsystems {
 		for _, dev := range sub.RealDevices {
+			drv, ok := drvs.Drivers[dev.Driver]
+			if !ok {
+				continue
+			}
 			for _, d := range dev.Defs {
-				_, ok := sub.Variables[d.Name]
+				v, ok := sub.Variables[d.Name]
 				if !ok {
-					//Переменная попалась первый раз
-					result += "Error! Subsystem " + sub.Name + " device  var " + d.Name + " into " + dev.Name + " haven't variable\n"
+					//Переменная нет
+					result += "Error! Subsystem " + sub.Name + " def var " + d.Name + " into " + dev.Name + " haven't variable\n"
+					continue
+				}
+				// Теперь проверим совпадение форматов переменной и пина драйвера
+				if drv.ReadPINFormat(d.DriverName) != v.Format {
+					result += "Error! Subsystem " + sub.Name + " def  var " + d.Name + " into " + dev.Name + " wrong format\n"
+					continue
+
 				}
 			}
 		}
@@ -68,9 +79,58 @@ func (pr *Project) VerifyAllVariables() string {
 }
 
 //VerifyAllDevices check all Devices into project
-func (pr *Project) VerifyAllDevices() error {
+func (pr *Project) VerifyAllDevices(drvs Drivers) string {
+	result := ""
 	// TODO: Вначале проверяем наличие всех драйверов
-	// TODO: Потом проверяем все назначения на устройства со стороны драйвера
-	return nil
+	for _, sub := range pr.Subsystems {
+		for _, dev := range sub.RealDevices {
+			drv, ok := drvs.Drivers[dev.Driver]
+			if !ok {
+				result += "Error! subsystem " + sub.Name + " device " + dev.Name + " not found driver " + dev.Driver + "\n"
+				continue
+			}
+			// TODO: Потом проверяем все назначения на устройства со стороны драйвера
+			for _, d := range dev.Defs {
+				if !drv.FindPIN(d.DriverName) {
+					result += "Error! subsystem " + sub.Name + " device " + dev.Name + " driver " + dev.Driver
+					result += " not found " + d.DriverName
+					continue
+				}
+			}
+		}
+	}
 
+	return result
+
+}
+
+//FindPIN find pin on driver
+func (ds *DriverXML) FindPIN(name string) bool {
+	for _, s := range ds.Signals.Signals {
+		if s.Name == name {
+			return true
+		}
+	}
+	for _, i := range ds.Inits.Inits {
+		if i.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+//ReadPINFormat return format pin var
+func (ds *DriverXML) ReadPINFormat(name string) string {
+	result := ""
+	for _, s := range ds.Signals.Signals {
+		if s.Name == name {
+			return s.Format
+		}
+	}
+	for _, i := range ds.Inits.Inits {
+		if i.Name == name {
+			return i.Format
+		}
+	}
+	return result
 }

@@ -26,8 +26,11 @@ func main() {
 		fmt.Println(model.ToString())
 	}
 	// TODO: Глобальная прооверка на правильность данных
-	fmt.Println(pr.VerifyAllVariables())
+	fmt.Println(pr.VerifyAllDevices(defDrivers))
+
+	fmt.Println(pr.VerifyAllVariables(defDrivers))
 	// TODO: Написать кодогенератор
+	// TODO: Open
 	fmt.Println("Конец работы")
 
 }

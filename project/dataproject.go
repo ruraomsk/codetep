@@ -10,7 +10,7 @@ type Project struct {
 	General    General `xml:"general" json:"general"`
 	Subs       []Sub   `xml:"subs" json:"subs"`
 	Path       string
-	Subsystems map[string]*Subsystem
+	Subsystems map[string]*Subsystem 
 }
 
 //ToJSON вывод в JSOM
