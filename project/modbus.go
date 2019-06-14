@@ -79,7 +79,7 @@ func (t *TableXML) UpdateRegisters(regs Registers) {
 
 //SaveTable сохраняет таблицу в формате XML
 func (t *TableXML) SaveTable(path string) error {
-	path=RepairPath(path)
+	path = RepairPath(path)
 	result, err := xml.Marshal(t)
 	if err != nil {
 		fmt.Println("Error !" + err.Error())
@@ -125,13 +125,13 @@ func (t *TableXML) GetRegisters(name, description string) *Registers {
 				reg.Type, _ = strconv.Atoi(val.Value)
 				break
 			case "format":
-				reg.Type, _ = strconv.Atoi(val.Value)
+				reg.Format, _ = strconv.Atoi(val.Value)
 				break
 			case "size":
 				reg.Size, _ = strconv.Atoi(val.Value)
 				break
 			case "unitId":
-				reg.Size, _ = strconv.Atoi(val.Value)
+				reg.UID, _ = strconv.Atoi(val.Value)
 				break
 			}
 		}

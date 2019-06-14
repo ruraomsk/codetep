@@ -59,6 +59,9 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 			subb.Variables = make(map[string]Variable)
 			err = xml.Unmarshal(buf, &vars)
 			for _, v := range vars.ListVariable {
+				if len(v.Size) == 0 {
+					v.Size = "1"
+				}
 				subb.Variables[v.Name] = v
 			}
 			//Load Saves section

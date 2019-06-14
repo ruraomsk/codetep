@@ -20,10 +20,14 @@ func main() {
 		return
 	}
 	defModels, err := project.LoadAllModels(prPath + "/settings/models")
-	fmt.Println(pr.ToString())
+	// fmt.Println(pr.ToString())
 	fmt.Println(defDrivers.ToString())
 	for _, model := range defModels {
 		fmt.Println(model.ToString())
 	}
+	// TODO: Глобальная прооверка на правильность данных
+	fmt.Println(pr.VerifyAllVariables())
+	// TODO: Написать кодогенератор
 	fmt.Println("Конец работы")
+
 }
