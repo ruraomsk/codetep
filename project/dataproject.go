@@ -3,6 +3,8 @@ package project
 import (
 	"encoding/json"
 	"encoding/xml"
+	"strconv"
+	"strings"
 )
 
 //Project описание одного проекта системы
@@ -10,7 +12,9 @@ type Project struct {
 	General    General `xml:"general" json:"general"`
 	Subs       []Sub   `xml:"subs" json:"subs"`
 	Path       string
-	Subsystems map[string]*Subsystem 
+	Subsystems map[string]*Subsystem
+	DefDrivers Drivers
+	Models     map[string]ModelXML
 }
 
 //ToJSON вывод в JSOM
@@ -80,6 +84,8 @@ type Subsystem struct {
 	Variables    map[string]Variable
 	MapSaves     map[string]Save
 	RealDevices  map[string]Device
+	SizeBuffer   int
+	NameSaveFile string
 }
 
 //ToString подсистему в строку
@@ -148,19 +154,29 @@ type Modbus struct {
 	Description string `xml:"description,attr" json:"desription"`
 	Type        string `xml:"type,attr" json:"type"`
 	Port        string `xml:"port,attr,omitempty" json:"port"`
-	Slave       string `xml:"slave,attr,omitempty" json:"slave"`
-	Step        string `xml:"step,attr,omitempty" json:"step"`
-	XMLModbus   string `xml:"xml,attr,omitempty" json:"xml"`
-	Registers   map[string]Register
+	// Slave       string `xml:"slave,attr,omitempty" json:"slave"`
+	Step      string `xml:"step,attr,omitempty" json:"step"`
+	IP1       string `xml:"ip1,attr,omitempty"`
+	IP2       string `xml:"ip2,attr,omitempty"`
+	XMLModbus string `xml:"xml,attr,omitempty" json:"xml"`
+	Registers map[string]Register
 }
 
 //ToString возвращает в символьном виде
 func (m *Modbus) ToString() string {
-	result := "\t" + m.Name + "\t:" + m.Description + "\t\t\t" + m.Type + "\t" + m.Port + "\t" + m.Slave + "\t" + m.Step + "\t" + m.XMLModbus + "\n"
+	result := "\t" + m.Name + "\t:" + m.Description + "\t\t\t" + m.Type + "\t" + m.Port + "\t" + m.Step + "\t" + m.XMLModbus + "\n"
 	for _, reg := range m.Registers {
 		result += reg.ToString()
 	}
 	return result
+}
+
+//IsMaster return true if modbus is master mode
+func (m *Modbus) IsMaster() bool {
+	if strings.ToLower(m.Type) == "master" {
+		return true
+	}
+	return false
 }
 
 //DevicesXML struct
@@ -177,6 +193,7 @@ type Device struct {
 	Driver      string `xml:"driver,attr" json:"driver"`
 	Slot        string `xml:"slot,attr" json:"slot"`
 	Defs        []Def
+	Inits       []Init
 }
 
 //ToString возвращает в символьном виде
@@ -199,9 +216,17 @@ func (d *Def) ToString() string {
 	return "<<\t" + d.Name + "\t\t:\t" + d.DriverName + "\n"
 }
 
+//Init одна строка настройки драйвера
+type Init struct {
+	Name  string `xml:"name,attr" json:"name"`
+	Value string `xml:"value,attr" json:"value"`
+}
+
 //Saved сохранениеи переменных на внешний носитель
 type Saved struct {
-	Saves []Save `xml:"save" json:"save"`
+	Sav      xml.Name `xml:"saves"`
+	NameFile string   `xml:"name,attr"`
+	Saves    []Save   `xml:"save" json:"save"`
 }
 
 //ToString возвращает в символьном виде
@@ -244,6 +269,27 @@ type Variable struct {
 	Description string `xml:"description,attr" json:"desription"`
 	Format      string `xml:"format,attr" json:"format"`
 	Size        string `xml:"size,attr,omitempty" json:"size"`
+	ID          int
+	Address     int
+}
+
+//FullSize возвращает размер в байтах вместе с байтом достоверности
+func (v *Variable) FullSize() int {
+	size := 0
+	format, _ := strconv.Atoi(v.Format)
+	if format == 1 {
+		size = 2
+	} else if format <= 4 {
+		size = 3
+	} else if format <= 9 {
+		size = 5
+	} else if format <= 15 {
+		size = 9
+	} else if format == 18 {
+		size = 2
+	}
+	res, _ := strconv.Atoi(v.Size)
+	return size * res
 }
 
 //ToString возвращает в символьном виде

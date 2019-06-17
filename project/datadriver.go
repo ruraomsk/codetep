@@ -3,6 +3,7 @@ package project
 import (
 	"encoding/json"
 	"encoding/xml"
+	"strconv"
 )
 
 //Drivers хранение всех драйверов
@@ -85,4 +86,41 @@ func (i *Inits) ToString() string {
 		result += sig.ToString() + "\n"
 	}
 	return result
+}
+
+//MakeDriverTable build code for main hrader for device
+func (dev *Device) MakeDriverTable(div Drivers) string {
+	d, _ := div.Drivers[dev.Driver]
+	res := make([]string, 0)
+	l, _ := strconv.Atoi(d.LenInit)
+	for i := 0; i < l; i++ {
+		res = append(res, "0")
+	}
+	for _, i := range d.Inits.Inits {
+		a, _ := strconv.Atoi(i.Address)
+		res[a] = i.Value
+		for _, ii := range dev.Inits {
+			if ii.Name == i.Name {
+				res[a] = ii.Value
+				break
+			}
+		}
+	}
+	rez := ""
+	rez = "#include <" + d.Header + ">/n"
+	rez += "static char buf_" + dev.Name + "[" + d.LenData + "];\t//" + dev.Name + "\n"
+	rez += "static " + d.Inits.Type + " ini_" + dev.Name + "={"
+	for _, r := range res {
+		rez += r + ","
+	}
+	rez += "};\n"
+	rez += "#pragma pack(push,1)\n"
+	rez += "static table_drv table_" + dev.Name + "={0,0,&ini_" + dev.Name + ",buf_" + dev.Name + ",0,0};\n"
+	rez += "#pragma pop\n"
+	rez += "#pragma pack(push,1)\n"
+	rez += "static DriverRegister def_buf_" + dev.Name + "[]={\n"
+	for _, def := range dev.Defs {
+
+	}
+	return rez
 }

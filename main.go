@@ -14,20 +14,23 @@ func main() {
 		fmt.Println("Найдены ошибки " + err.Error())
 		return
 	}
-	defDrivers, err := project.LoadAllDrivers(prPath + "/settings/default")
+	pr.DefDrivers, err = project.LoadAllDrivers(prPath + "/settings/default")
 	if err != nil {
 		fmt.Println("Найдены ошибки " + err.Error())
 		return
 	}
-	defModels, err := project.LoadAllModels(prPath + "/settings/models")
+	pr.Models, err = project.LoadAllModels(prPath + "/settings/models")
 	// fmt.Println(pr.ToString())
 	// fmt.Println(defDrivers.ToString())
-	for _, model := range defModels {
+	for _, model := range pr.Models {
 		fmt.Println(model.ToString())
 	}
 	// TODO: Глобальная прооверка на правильность данных
-	fmt.Println(pr.VerifyAllDevices(defDrivers))
-	fmt.Println(pr.VerifyAllVariables(defDrivers))
+	// fmt.Println(pr.VerifyAllDevices())
+	// fmt.Println(pr.VerifyAllVariables())
+	err = pr.MakeMaster(prPath)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	fmt.Println("Конец работы")
-
 }

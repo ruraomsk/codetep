@@ -58,12 +58,19 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 			var vars = new(Variables)
 			subb.Variables = make(map[string]Variable)
 			err = xml.Unmarshal(buf, &vars)
+			fullSize := 0
+			id := 1
 			for _, v := range vars.ListVariable {
 				if len(v.Size) == 0 {
 					v.Size = "1"
 				}
+				v.ID = id
+				v.Address = fullSize
+				fullSize += v.FullSize()
+				id++
 				subb.Variables[v.Name] = v
 			}
+			subb.SizeBuffer = fullSize
 			//Load Saves section
 			namefile = RepairPath(p.Path + "/" + sub.Path + "/" + subb.Saves.XML + ".xml")
 			buf, err = ioutil.ReadFile(namefile)
@@ -78,6 +85,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 				fmt.Println(err.Error())
 				return nil, err
 			}
+			subb.NameSaveFile = saves.NameFile
 			for _, s := range saves.Saves {
 				subb.MapSaves[s.Name] = s
 			}

@@ -8,7 +8,7 @@ type subVariable struct {
 }
 
 //VerifyAllVariables check all Variables into project
-func (pr *Project) VerifyAllVariables(drvs Drivers) string {
+func (pr *Project) VerifyAllVariables() string {
 	result := ""
 	// TODO: Вначале проверяем переменные все они с одним именем должны быть одного типа
 	vars := make(map[string]subVariable, 10000)
@@ -54,7 +54,7 @@ func (pr *Project) VerifyAllVariables(drvs Drivers) string {
 	// TODO: Потом проверяем все назначения на устройства со стороны переменных
 	for _, sub := range pr.Subsystems {
 		for _, dev := range sub.RealDevices {
-			drv, ok := drvs.Drivers[dev.Driver]
+			drv, ok := pr.DefDrivers.Drivers[dev.Driver]
 			if !ok {
 				continue
 			}
@@ -79,12 +79,12 @@ func (pr *Project) VerifyAllVariables(drvs Drivers) string {
 }
 
 //VerifyAllDevices check all Devices into project
-func (pr *Project) VerifyAllDevices(drvs Drivers) string {
+func (pr *Project) VerifyAllDevices() string {
 	result := ""
 	// TODO: Вначале проверяем наличие всех драйверов
 	for _, sub := range pr.Subsystems {
 		for _, dev := range sub.RealDevices {
-			drv, ok := drvs.Drivers[dev.Driver]
+			drv, ok := pr.DefDrivers.Drivers[dev.Driver]
 			if !ok {
 				result += "Error! subsystem " + sub.Name + " device " + dev.Name + " not found driver " + dev.Driver + "\n"
 				continue
