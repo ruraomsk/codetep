@@ -127,6 +127,9 @@ func (t *TableXML) GetRegisters(name, description string) *Registers {
 			case "format":
 				reg.Format, _ = strconv.Atoi(val.Value)
 				break
+			case "address":
+				reg.Address, _ = strconv.Atoi(val.Value)
+				break
 			case "size":
 				reg.Size, _ = strconv.Atoi(val.Value)
 				break

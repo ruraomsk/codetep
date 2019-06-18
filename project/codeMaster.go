@@ -115,7 +115,18 @@ func (p *Project) MakeMaster(prPath string) error {
 		}
 		sw.WriteString("#pragma pack(push,1)\n")
 		sw.WriteString(modStr)
-		sw.WriteString("\t{0,-1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0},}\n")
+		sw.WriteString("\t{0,-1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0},\n};\n")
+		sw.WriteString("#pragma pop\n")
+		for _, dev := range sub.RealDevices {
+			sw.WriteString(dev.MakeDriverTable(p.DefDrivers))
+		}
+		sw.WriteString("#pragma pack(push,1)\n")
+		sw.WriteString("static Drive drivers[]={\n")
+		for _, dev := range sub.RealDevices {
+			drv := p.DefDrivers.Drivers[dev.Driver]
+			sw.WriteString("\t{" + drv.Code + ",0x" + dev.Slot + "," + drv.LenData + ",def_buf_" + dev.Name + ",&table_" + dev.Name + "},\t//" + dev.Description + "\n")
+		}
+		sw.WriteString("\t{0,0,0,0,NULL,NULL},\n};\n")
 		sw.WriteString("#pragma pop\n")
 
 		sw.Close()

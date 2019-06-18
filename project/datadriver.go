@@ -31,6 +31,7 @@ type DriverXML struct {
 	Header      string   `xml:"header,attr" json:"header"`
 	Signals     Signals  `xml:"signals" json:"signals"`
 	Inits       Inits    `xml:"init" json:"init"`
+	MapSignals  map[string]Signal
 }
 
 //ToJSON вывод в формате Json
@@ -120,7 +121,10 @@ func (dev *Device) MakeDriverTable(div Drivers) string {
 	rez += "#pragma pack(push,1)\n"
 	rez += "static DriverRegister def_buf_" + dev.Name + "[]={\n"
 	for _, def := range dev.Defs {
-
+		s := d.MapSignals[def.DriverName]
+		rez += "\t{(&" + def.Name + "," + s.Format + "," + s.Address + "},\n"
 	}
+	rez += "\t{NULL,0,0},\n};\n"
+	rez += "#pragma pop\n"
 	return rez
 }

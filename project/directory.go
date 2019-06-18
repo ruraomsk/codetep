@@ -33,6 +33,7 @@ func LoadAllDrivers(path string) (Drivers, error) {
 			err = fmt.Errorf("Error Ошибка загрузки драйвера  %s %s", npath, err.Error())
 			return *drvs, err
 		}
+
 		drvs.Drivers[drv.Name] = *drv
 		// drv.SaveXML(path + "_" + file.Name())
 	}
@@ -52,7 +53,10 @@ func LoadDriverTable(namefile string) (*DriverXML, error) {
 	}
 	err = xml.Unmarshal(buf, &t)
 	// fmt.Println(t.ToString())
-
+	t.MapSignals = make(map[string]Signal)
+	for _, s := range t.Signals.Signals {
+		t.MapSignals[s.Name] = s
+	}
 	return t, err
 
 }
@@ -167,7 +171,6 @@ func (s *Subsystem) LoadAssign(path string) (err error) {
 						name := xmldoc.XDName{LocalName: "name"}
 						def := Def{Name: assign.Attributes[name], DriverName: textValue(ass)}
 						rd.Defs = append(rd.Defs, def)
-
 					}
 					if ass.GetName().String() == "init" {
 						assign, _ := ass.(*xmldoc.XDElement)
