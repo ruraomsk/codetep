@@ -125,7 +125,22 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 				m.Registers = table.GetRegisters(m.Name, m.Description).MapRegs
 				subb.Modbuses[i] = m
 			}
-
+			if subb.Initsig.XML!=""{
+				namefile = RepairPath(p.Path + "/" + sub.Path + "/" + subb.Initsig.XML + ".xml")
+				buf, err = ioutil.ReadFile(namefile)
+				if err != nil {
+					fmt.Println(err.Error())
+					return nil, err
+				}
+				ini := new(IniSignal)
+				err = xml.Unmarshal(buf, &ini)
+				if err != nil {
+					fmt.Println(err.Error())
+					return nil, err
+				}
+				
+	
+			}
 			return subb, err
 		}
 	}

@@ -86,6 +86,7 @@ type Subsystem struct {
 	RealDevices  map[string]Device
 	SizeBuffer   int
 	NameSaveFile string
+	IniSignal    IniSignal
 }
 
 //ToString подсистему в строку
@@ -291,8 +292,38 @@ func (v *Variable) FullSize() int {
 	res, _ := strconv.Atoi(v.Size)
 	return size * res
 }
+func (v *Variable) getFunctionSet() string {
+	format, _ := strconv.Atoi(v.Format)
+	if format == 1 {
+		return "setAsBool"
+	} else if format < 4 {
+		return "setAsShort"
+	} else if format <= 7 {
+		return "setAsInt"
+	} else if format <= 9 {
+		return "setAsFloat"
+	} else if format <= 13 {
+		return "setAsLong"
+	} else if format <= 15 {
+		return "setAsDouble"
+	} else if format == 18 {
+		return "setAsBool"
+	}
+	return "NOTFOUND"
+}
 
 //ToString возвращает в символьном виде
 func (v *Variable) ToString() string {
 	return "\t" + v.Name + "\t:" + v.Description + "\t" + v.Format + "\t" + v.Size + "\n"
+}
+
+//IniSignal define init signals for main header
+type IniSignal struct {
+	Isignals []Isignal `xml:"signal"`
+}
+
+//Isignal one signal
+type Isignal struct {
+	Value string `xml:"value,attr"`
+	Name  string `xml:",chardata"`
 }

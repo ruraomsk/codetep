@@ -15,11 +15,13 @@ func (p *Project) MakeMaster(prPath string) error {
 		err := os.Remove(path)
 		if err != nil {
 			err = fmt.Errorf("Error! Remove file " + path + " " + err.Error())
+			return err
 		}
 
 		sw, err := os.Create(path)
 		if err != nil {
 			err = fmt.Errorf("Error! Create file " + path + " " + err.Error())
+			return err
 		}
 
 		defer sw.Close()
@@ -128,7 +130,18 @@ func (p *Project) MakeMaster(prPath string) error {
 		}
 		sw.WriteString("\t{0,0,0,0,NULL,NULL},\n};\n")
 		sw.WriteString("#pragma pop\n")
-
+		sw.WriteString("void InitSetConst(void){\t//Инициализация переменных для хранения\n")
+		for _, sv := range sub.MapSaves {
+			v := sub.Variables[sv.Name]
+			fname := v.getFunctionSet()
+			sw.WriteString("\t" + fname + "(" + strconv.Itoa(v.ID) + "," + sv.Value + ");\n")
+		}
+		for _, ii := range sub.IniSignal.Isignals {
+			v := sub.Variables[ii.Name]
+			fname := v.getFunctionSet()
+			sw.WriteString("\t" + fname + "(" + strconv.Itoa(v.ID) + "," + ii.Value + ");\n")
+		}
+		sw.WriteString("}\n")
 		sw.Close()
 	}
 	return nil
