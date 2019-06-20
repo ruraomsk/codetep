@@ -1,6 +1,7 @@
 package project
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/xml"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/R358/xmldoc"
 	"github.com/clbanning/mxj"
+	"golang.org/x/text/encoding/charmap"
 )
 
 //LoadAllDrivers загружает все драйвера
@@ -87,6 +89,59 @@ func LoadAllModels(path string) (map[string]ModelXML, error) {
 
 	return Result, nil
 
+}
+
+//LoadCodePart load part c code from setting
+func (p *Project) LoadCodePart(nameFile string) (string, error) {
+	npath := RepairPath(p.Path + "/settings/src-FP/" + nameFile + ".c")
+	buf, err := ioutil.ReadFile(npath)
+	if err == nil {
+		return string(buf), nil
+	}
+	return "\n!!!*************NOT FILE**********************\n" + npath, err
+}
+
+//LoadShema Загружает хедер схемы попутно вынимая все имена временных переменных
+func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
+	lstrings := make([]string, 0)
+	tvar := make(map[string]string)
+	path := RepairPath(p.Path + "/" + sub.Path + "/scheme/Scheme.h")
+	file, err := os.Open(path)
+	if err != nil {
+		return lstrings, tvar, err
+	}
+	dec := charmap.Windows1251.NewDecoder()
+	defer file.Close()
+	sReader := bufio.NewScanner(file)
+	for sReader.Scan() {
+		line, err := dec.String(sReader.Text())
+		if err != nil {
+			return lstrings, tvar, err
+		}
+		lstrings = append(lstrings, line)
+		ls := strings.Split(line, " ")
+		if len(ls) != 2 {
+			continue
+		}
+		if strings.Contains(ls[0], "ss") && strings.Contains(ls[1], "va") {
+			ls[1] = strings.Replace(ls[1], ";", "", -1)
+			var r string
+			if ls[0] == "ssbool" {
+				r = ".b=0;"
+			} else if ls[0] == "ssfloat" {
+				r = ".f=0.0;"
+			} else if ls[0] == "ssint" {
+				r = ".i=0;"
+			} else if ls[0] == "sslong" {
+				r = ".l=0;"
+			} else if ls[0] == "sslong" {
+				r = ".c=0;"
+			}
+			tvar[ls[1]] = r
+		}
+	}
+
+	return lstrings, tvar, nil
 }
 
 //LoadModel load from XML one model

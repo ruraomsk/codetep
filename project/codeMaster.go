@@ -13,10 +13,10 @@ func (p *Project) MakeMaster(prPath string) error {
 		path := prPath + "/" + s.Path + "/src/master.h"
 		path = RepairPath(path)
 		err := os.Remove(path)
-		if err != nil {
-			err = fmt.Errorf("Error! Remove file " + path + " " + err.Error())
-			return err
-		}
+		// if err != nil {
+		// 	err = fmt.Errorf("Error! Remove file " + path + " " + err.Error())
+		// 	return err
+		// }
 
 		sw, err := os.Create(path)
 		if err != nil {
@@ -31,13 +31,13 @@ func (p *Project) MakeMaster(prPath string) error {
 		model := p.Models[sub.Model.Name]
 		sw.WriteString("// Подсистема  " + s.Name + ":" + s.Description + "\n")
 		simul := "0"
-		if p.General.Simul == "on" {
+		if p.Simul == "on" {
 			simul = "1"
 		}
 		sw.WriteString("static char SimulOn=" + simul + ";\n")
 		sw.WriteString("static short CodeSub=" + s.ID + ";\n")
-		sw.WriteString("static char SimulIP[]=\"" + p.General.IP + "\\0\";\n")
-		sw.WriteString("static int SimulPort=" + p.General.Port + ";\n")
+		sw.WriteString("static char SimulIP[]=\"" + p.IP + "\\0\";\n")
+		sw.WriteString("static int SimulPort=" + p.Port + ";\n")
 		sw.WriteString("static int StepCycle=" + s.Step + ";\t //Время цикла мс\n")
 		sw.WriteString("float takt,taktScheme=0,taktSS=0;\n")
 		sw.WriteString("#define SIZE_BUFFER " + strconv.Itoa(sub.SizeBuffer) + "\n")
@@ -47,13 +47,15 @@ func (p *Project) MakeMaster(prPath string) error {
 			sw.WriteString("SetupUDP setUDP ={\"" + s.Main + "\\0\",5432,\"" + s.Second + "\\0\",5432,BUFFER,sizeof(BUFFER),};\n")
 			sw.WriteString("int master=1,nomer=1;\n")
 		}
-		for _, v := range sub.Variables {
+		for i := 0; i < len(sub.Vars.ListVariable); i++ {
+			v := sub.Vars.ListVariable[i]
 			sw.WriteString("#define " + v.Name + "\tBUFFER[" + strconv.Itoa(v.Address) + "]\t// " + v.Description + "\n")
 			sw.WriteString("#define id" + v.Name + "\t" + strconv.Itoa(v.ID) + "\t// " + v.Description + "\n")
 		}
 		sw.WriteString("#pragma pack(push,1)\n")
 		sw.WriteString("static VarCtrl allVariables[]={ \t\t\t //Описание всех переменных\n")
-		for _, v := range sub.Variables {
+		for i := 0; i < len(sub.Vars.ListVariable); i++ {
+			v := sub.Vars.ListVariable[i]
 			sw.WriteString("\t " + strconv.Itoa(v.ID) + "\t," + v.Format + "\t," + v.Size + "\t,&" + v.Name + "},\t//" + v.Description + "\n")
 		}
 		sw.WriteString("\t{-1,0,NULL},\n}\n")
@@ -142,6 +144,33 @@ func (p *Project) MakeMaster(prPath string) error {
 			sw.WriteString("\t" + fname + "(" + strconv.Itoa(v.ID) + "," + ii.Value + ");\n")
 		}
 		sw.WriteString("}\n")
+		if model.ActionContain("add_vchs") {
+			s, err := p.LoadCodePart("add_VCHS")
+			if err != nil {
+				return err
+			}
+			sw.WriteString(s)
+		}
+		ss := sub.MakeDelayHeader()
+		// fmt.Println(sub.Name, ss)
+		sw.WriteString(ss)
+		sts, tvars, err := p.LoadShema(s)
+		if err != nil {
+			return err
+		}
+		for _, s := range sts {
+			if strings.Contains(s, "void Scheme()") {
+				sw.WriteString("void ZeroVar() {\n")
+				for name, tv := range tvars {
+					sw.WriteString("\t" + name + tv + "\n")
+				}
+				sw.WriteString("}\n")
+			}
+			sw.WriteString(s + "\n")
+		}
+		ss = sub.MakeMainCycleFunc()
+		sw.WriteString(ss)
+		sw.WriteString("#endif")
 		sw.Close()
 	}
 	return nil

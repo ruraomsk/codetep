@@ -8,7 +8,7 @@ import (
 func main() {
 
 	fmt.Println("Начало работы")
-	prPath := "/home/rura/dataSimul/pr"
+	prPath := "/home/rura/dataSimul/prnew"
 	pr, err := project.LoadProject(prPath)
 	if err != nil {
 		fmt.Println("Найдены ошибки " + err.Error())

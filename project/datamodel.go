@@ -1,5 +1,7 @@
 package project
 
+import "strings"
+
 //ModelXML заголовок
 type ModelXML struct {
 	ModifC ModifC `xml:"modif_C"`
@@ -50,10 +52,11 @@ func (a *Attach) ToString() string {
 func (a *Action) ToString() string {
 	return "name=" + a.Name
 }
+
 //ActionContain if contains string then true
 func (m *ModelXML) ActionContain(action string) bool {
 	for _, act := range m.ModifH.Actions {
-		if action == act.Name {
+		if action == strings.ToLower(act.Name) {
 			return true
 		}
 	}

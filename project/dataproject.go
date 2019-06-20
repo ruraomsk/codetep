@@ -9,27 +9,23 @@ import (
 
 //Project описание одного проекта системы
 type Project struct {
-	General    General `xml:"general" json:"general"`
-	Subs       []Sub   `xml:"subs" json:"subs"`
-	Path       string
-	Subsystems map[string]*Subsystem
-	DefDrivers Drivers
-	Models     map[string]ModelXML
+	General     xml.Name `xml:"general" json:"general"`
+	Name        string   `xml:"name,attr" json:"name"`
+	Description string   `xml:"description,attr" json:"desription"`
+	DefDrv      string   `xml:"defdrv,attr" json:"defdrv"`
+	Simul       string   `xml:"simul,attr" json:"simul"`
+	IP          string   `xml:"ip,attr" json:"ip"`
+	Port        string   `xml:"port,attr" json:"port"`
+	Subs        []Sub    `xml:"subs" json:"subs"`
+	Path        string
+	Subsystems  map[string]*Subsystem
+	DefDrivers  Drivers
+	Models      map[string]ModelXML
 }
 
 //ToJSON вывод в JSOM
 func (p *Project) ToJSON() ([]byte, error) {
 	return json.Marshal(p)
-}
-
-//General описание параматров всего проекта
-type General struct {
-	Name        string `xml:"name,attr" json:"name"`
-	Description string `xml:"description,attr" json:"desription"`
-	DefDrv      string `xml:"defdrv,attr" json:"defdrv"`
-	Simul       string `xml:"simul,attr" json:"simul"`
-	IP          string `xml:"ip,attr" json:"ip"`
-	Port        string `xml:"port,attr" json:"port"`
 }
 
 //Sub описание одной подсистемы
@@ -46,7 +42,7 @@ type Sub struct {
 
 //ToString вывод в строку
 func (p *Project) ToString() string {
-	result := p.General.Name + ":" + p.General.Description + " =" + "\n"
+	result := p.Name + ":" + p.Description + " =" + "\n"
 	for _, sub := range p.Subs {
 		result += sub.Name + "\t" + sub.Description + "\t" + sub.Path + "\t" + sub.File + "\t" + sub.Path + "\t" + sub.Step + "\t" + sub.Path + "\n"
 		subt := p.Subsystems[sub.Name]
@@ -82,6 +78,7 @@ type Subsystem struct {
 	Modbuses     []Modbus     `xml:"modbus" json:"modbus"`
 	Delay        Delay        `xml:"delay" json:"delay"`
 	Variables    map[string]Variable
+	Vars         Variables
 	MapSaves     map[string]Save
 	RealDevices  map[string]Device
 	SizeBuffer   int
@@ -137,6 +134,51 @@ type Result struct {
 //Delay Задержка начала основоного цикла
 type Delay struct {
 	Time string `xml:"time,attr" json:"time"`
+}
+
+//MakeDelayHeader make declare var for delay and restart
+func (s *Subsystem) MakeDelayHeader() string {
+	res := ""
+	if s.Netblkey.Name != "" {
+		res += "int freebuf=0;\n"
+	}
+	if s.Delay.Time != "" {
+		res += "int delay=0;\n"
+	}
+	return res
+}
+
+//MakeMainCycleFunc maker subroutine MainCycle
+func (s *Subsystem) MakeMainCycleFunc() string {
+	res := "void MainCycle(void){\n"
+
+	if s.Netblkey.Name == "" && s.Delay.Time == "" {
+		res += "\tScheme();\n"
+	} else {
+		res += "\tif ((getAsShort(" + s.Netblkey.Name + ") == 2) || (getAsShort(" + s.Netblkey.Name + ") == 3)) {\n"
+		if s.Model.Name != "PTI" {
+			res += "\t\tif(delqy++<200) return;\n"
+			res += "\t\tdelay=delay>32000?32000:delay;\n"
+		}
+		res += "\t\tfreebuff = 0;\n"
+		res += "\t\tScheme();\n"
+		res += "\t} else {\n"
+		res += "\t\tif (freebuff) return;\n"
+		res += "\t\telse {\n"
+		res += "\t\t\tfreebuff = 1;\n\t\t\tmemset(BUFFER, 0, SIZE_BUFFER);\n"
+		res += "\t\t\tInitSetConst();\n\t\t\tZeroVar();\n"
+		res += "\t\t\tif (SimulOn) if (initAllSimul(CodeSub, drivers, SimulIP, SimulPort)) return EXIT_FAILURE;\n"
+
+		if s.Model.Name == "PTI" {
+			res += "\t\t\telse if (initAllDriversPTI(drivers)) return EXIT_FAILURE;\n"
+		} else {
+			res += "\t\t\telse if (initAllDrivers(drivers)) return EXIT_FAILURE;\n"
+		}
+		res += "\t\t}\n\t}\n"
+	}
+	res += "}\n"
+	return res
+
 }
 
 //Saves Путь к перечню сохраненнных переменных

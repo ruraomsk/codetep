@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"strings"
 )
 
@@ -55,12 +56,13 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 				fmt.Println(err.Error())
 				return nil, err
 			}
-			var vars = new(Variables)
 			subb.Variables = make(map[string]Variable)
-			err = xml.Unmarshal(buf, &vars)
+			err = xml.Unmarshal(buf, &subb.Vars)
 			fullSize := 0
 			id := 1
-			for _, v := range vars.ListVariable {
+			sort.Slice(subb.Vars.ListVariable, func(i, j int) bool { return subb.Vars.ListVariable[i].Name < subb.Vars.ListVariable[j].Name })
+			for i := 0; i < len(subb.Vars.ListVariable); i++ {
+				v := subb.Vars.ListVariable[i]
 				if len(v.Size) == 0 {
 					v.Size = "1"
 				}
@@ -69,6 +71,8 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 				fullSize += v.FullSize()
 				id++
 				subb.Variables[v.Name] = v
+				subb.Vars.ListVariable[i] = v
+
 			}
 			subb.SizeBuffer = fullSize
 			//Load Saves section
@@ -125,7 +129,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 				m.Registers = table.GetRegisters(m.Name, m.Description).MapRegs
 				subb.Modbuses[i] = m
 			}
-			if subb.Initsig.XML!=""{
+			if subb.Initsig.XML != "" {
 				namefile = RepairPath(p.Path + "/" + sub.Path + "/" + subb.Initsig.XML + ".xml")
 				buf, err = ioutil.ReadFile(namefile)
 				if err != nil {
@@ -138,8 +142,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 					fmt.Println(err.Error())
 					return nil, err
 				}
-				
-	
+
 			}
 			return subb, err
 		}
