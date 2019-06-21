@@ -1,7 +1,9 @@
 package project
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -172,6 +174,64 @@ func (p *Project) MakeMaster(prPath string) error {
 		sw.WriteString(ss)
 		sw.WriteString("#endif")
 		sw.Close()
+	}
+	return nil
+}
+
+//MakeMainC maker maic C file for all subsystems of project
+func (p *Project) MakeMainC(prPath string) error {
+	for _, s := range p.Subs {
+		sub := p.Subsystems[s.Name]
+		model := p.Models[sub.Model.Name]
+		path := prPath + "/" + s.Path + "/src/main.c"
+		path = RepairPath(path)
+		err := os.Remove(path)
+		// if err != nil {
+		// 	err = fmt.Errorf("Error! Remove file " + path + " " + err.Error())
+		// 	return err
+		// }
+
+		sw, err := os.Create(path)
+		if err != nil {
+			err = fmt.Errorf("Error! Create file " + path + " " + err.Error())
+			return err
+		}
+
+		defer sw.Close()
+
+		ipath := RepairPath(prPath + "/settings/src-FP/mainFP.c")
+		lpath := RepairPath(prPath + "/settings/src-FP/")
+		file, err := os.Open(ipath)
+		if err != nil {
+			err = fmt.Errorf("Error! Opening file " + ipath + " " + err.Error())
+			return err
+		}
+		defer file.Close()
+
+		sReader := bufio.NewScanner(file)
+		for sReader.Scan() {
+			line := sReader.Text()
+			if !strings.Contains(line, "%attach_") {
+				sw.WriteString(line)
+				continue
+			}
+			us := strings.Split(line, "_")
+			if len(us) != 2 {
+				continue
+			}
+			nameFile := model.AttachPath(us[1])
+			if nameFile == "" {
+				err = fmt.Errorf("Error! В подсистеме " + sub.Name + " при генерации main.c нет вставки " + us[1])
+				return err
+			}
+			pp := lpath + nameFile + ".c"
+			buf, err := ioutil.ReadFile(pp)
+			if err != nil {
+				err = fmt.Errorf("Error! В подсистеме " + sub.Name + " при генерации main.c нет " + pp + "!")
+				return err
+			}
+			sw.WriteString(string(buf))
+		}
 	}
 	return nil
 }

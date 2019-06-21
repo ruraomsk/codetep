@@ -157,24 +157,23 @@ func (s *Subsystem) MakeMainCycleFunc() string {
 	} else {
 		res += "\tif ((getAsShort(" + s.Netblkey.Name + ") == 2) || (getAsShort(" + s.Netblkey.Name + ") == 3)) {\n"
 		if s.Model.Name != "PTI" {
-			res += "\t\tif(delqy++<200) return;\n"
+			res += "\t\tif(delay++<200) return;\n"
 			res += "\t\tdelay=delay>32000?32000:delay;\n"
 		}
 		res += "\t\tfreebuff = 0;\n"
 		res += "\t\tScheme();\n"
 		res += "\t} else {\n"
 		res += "\t\tif (freebuff) return;\n"
-		res += "\t\telse {\n"
-		res += "\t\t\tfreebuff = 1;\n\t\t\tmemset(BUFFER, 0, SIZE_BUFFER);\n"
-		res += "\t\t\tInitSetConst();\n\t\t\tZeroVar();\n"
-		res += "\t\t\tif (SimulOn) if (initAllSimul(CodeSub, drivers, SimulIP, SimulPort)) return EXIT_FAILURE;\n"
+		res += "\t\tfreebuff = 1;\n\t\tmemset(BUFFER, 0, SIZE_BUFFER);\n"
+		res += "\t\tInitSetConst();\n\t\tZeroVar();\n"
+		res += "\t\tif (SimulOn) initAllSimul(CodeSub, drivers, SimulIP, SimulPort);\n"
 
 		if s.Model.Name == "PTI" {
-			res += "\t\t\telse if (initAllDriversPTI(drivers)) return EXIT_FAILURE;\n"
+			res += "\t\telse initAllDriversPTI(drivers);\n"
 		} else {
-			res += "\t\t\telse if (initAllDrivers(drivers)) return EXIT_FAILURE;\n"
+			res += "\t\telse initAllDrivers(drivers);\n"
 		}
-		res += "\t\t}\n\t}\n"
+		res += "\t}\n"
 	}
 	res += "}\n"
 	return res
