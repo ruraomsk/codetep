@@ -2,13 +2,19 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"rura/codetep/project"
 )
 
 func main() {
 
-	fmt.Println("Начало работы")
-	prPath := "/home/rura/dataSimul/prnew"
+	fmt.Println("Начало работы...")
+	prPath := ""
+	if len(os.Args) == 1 {
+		prPath = "/home/rura/dataSimul/prnew"
+	} else {
+		prPath = os.Args[1]
+	}
 	pr, err := project.LoadProject(prPath)
 	if err != nil {
 		fmt.Println("Найдены ошибки " + err.Error())
@@ -20,14 +26,6 @@ func main() {
 		return
 	}
 	pr.Models, err = project.LoadAllModels(prPath + "/settings/models")
-	// fmt.Println(pr.ToString())
-	// fmt.Println(defDrivers.ToString())
-	for _, model := range pr.Models {
-		fmt.Println(model.ToString())
-	}
-	// TODO: Глобальная прооверка на правильность данных
-	// fmt.Println(pr.VerifyAllDevices())
-	// fmt.Println(pr.VerifyAllVariables())
 	err = pr.MakeMaster(prPath)
 	if err != nil {
 		fmt.Println(err.Error())
