@@ -311,7 +311,7 @@ type Variable struct {
 	Description string `xml:"description,attr" json:"desription"`
 	Format      string `xml:"format,attr" json:"format"`
 	Size        string `xml:"size,attr,omitempty" json:"size"`
-	ID          int
+	ID          int    `json:"id"`
 	Address     int
 }
 
