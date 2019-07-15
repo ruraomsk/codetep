@@ -308,7 +308,7 @@ func (v *Variables) ToString() string {
 //Variable собственно описание переменной
 type Variable struct {
 	Name        string `xml:"name,attr" json:"name"`
-	Description string `xml:"description,attr" json:"desription"`
+	Description string `xml:"description,attr" json:"description"`
 	Format      string `xml:"format,attr" json:"format"`
 	Size        string `xml:"size,attr,omitempty" json:"size"`
 	ID          int    `json:"id"`
