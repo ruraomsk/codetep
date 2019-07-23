@@ -118,7 +118,6 @@ func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
 		if err != nil {
 			return lstrings, tvar, err
 		}
-		lstrings = append(lstrings, line)
 		ls := strings.Split(line, " ")
 		if len(ls) != 2 {
 			continue
@@ -138,7 +137,10 @@ func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
 				r = ".c=0;"
 			}
 			tvar[ls[1]] = r
+			continue
 		}
+		lstrings = append(lstrings, line)
+
 	}
 
 	return lstrings, tvar, nil

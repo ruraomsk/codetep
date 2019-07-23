@@ -36,6 +36,11 @@ func (p *Project) MakeMaster(prPath string) error {
 		if p.Simul == "on" {
 			simul = "1"
 		}
+		sts, tvars, err := p.LoadShema(s)
+		if err != nil {
+			return err
+		}
+		sub.AppendNewVariables(tvars)
 		sw.WriteString("static char SimulOn=" + simul + ";\n")
 		sw.WriteString("static short CodeSub=" + s.ID + ";\n")
 		sw.WriteString("static char SimulIP[]=\"" + p.IP + "\\0\";\n")
@@ -156,18 +161,18 @@ func (p *Project) MakeMaster(prPath string) error {
 		ss := sub.MakeDelayHeader()
 		// fmt.Println(sub.Name, ss)
 		sw.WriteString(ss)
-		sts, tvars, err := p.LoadShema(s)
-		if err != nil {
-			return err
-		}
+		// sts, tvars, err := p.LoadShema(s)
+		// if err != nil {
+		// 	return err
+		// }
 		for _, s := range sts {
-			if strings.Contains(s, "void Scheme()") {
-				sw.WriteString("void ZeroVar() {\n")
-				for name, tv := range tvars {
-					sw.WriteString("\t" + name + tv + "\n")
-				}
-				sw.WriteString("}\n")
-			}
+			// if strings.Contains(s, "void Scheme()") {
+			// 	sw.WriteString("void ZeroVar() {\n")
+			// 	for name, tv := range tvars {
+			// 		sw.WriteString("\t" + name + tv + "\n")
+			// 	}
+			// 	sw.WriteString("}\n")
+			// }
 			sw.WriteString(s + "\n")
 		}
 		ss = sub.MakeMainCycleFunc()

@@ -149,3 +149,29 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 	}
 	return nil, fmt.Errorf("Error! Нет такой подсистемы %s", name)
 }
+
+//AppendNewVariables добавить переменные из внутреннего
+func (s *Subsystem) AppendNewVariables(vars map[string]string) {
+	id := 30000
+	for name, st := range vars {
+		v := new(Variable)
+		v.Name = name
+		v.Address = s.SizeBuffer
+		if strings.Contains(st, ".b=0") {
+			v.Format = "1"
+		} else if strings.Contains(st, ".i=0") {
+			v.Format = "3"
+		} else if strings.Contains(st, ".f=0") {
+			v.Format = "8"
+		} else if strings.Contains(st, ".l=0") {
+			v.Format = "11"
+		}
+		v.Size = "1"
+		v.Description = "Внутренняя переменная " + name
+		v.ID = id
+		id++
+		s.SizeBuffer += v.FullSize()
+		s.Variables[v.Name] = *v
+		s.Vars.ListVariable = append(s.Vars.ListVariable, *v)
+	}
+}
