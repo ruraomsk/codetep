@@ -108,7 +108,7 @@ func (dev *Device) MakeDriverTable(div Drivers) string {
 		}
 	}
 	rez := ""
-	rez = "#include <" + d.Header + ">/n"
+	rez = "#include <" + d.Header + ">\n"
 	rez += "static char buf_" + dev.Name + "[" + d.LenData + "];\t//" + dev.Name + "\n"
 	rez += "static " + d.Inits.Type + " ini_" + dev.Name + "={"
 	for _, r := range res {
@@ -122,9 +122,10 @@ func (dev *Device) MakeDriverTable(div Drivers) string {
 	rez += "static DriverRegister def_buf_" + dev.Name + "[]={\n"
 	for _, def := range dev.Defs {
 		s := d.MapSignals[def.DriverName]
-		rez += "\t{(&" + def.Name + "," + s.Format + "," + s.Address + "},\n"
+		rez += "\t{&" + def.Name + "," + s.Format + "," + s.Address + "},\n"
 	}
 	rez += "\t{NULL,0,0},\n};\n"
 	rez += "#pragma pop\n"
+	// rez += "static char temp_" + dev.Name + "[256];\n"
 	return rez
 }

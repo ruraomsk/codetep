@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/R358/xmldoc"
@@ -115,11 +116,45 @@ func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
 	sReader := bufio.NewScanner(file)
 	for sReader.Scan() {
 		line, err := dec.String(sReader.Text())
+		// if strings.Contains(line, "void") {
+		// 	r := 0
+		// 	r += r
+		// }
 		if err != nil {
 			return lstrings, tvar, err
 		}
+		if strings.Contains(line, "void InitInternalParametr(void)") {
+			lstrings = append(lstrings, line)
+			for sReader.Scan() {
+				line, err = dec.String(sReader.Text())
+				if err != nil {
+					return lstrings, tvar, err
+				}
+				if strings.Contains(line, "}") {
+					// lstrings = append(lstrings, line)
+					break
+				}
+				if !strings.Contains(line, "= &(&") {
+					lstrings = append(lstrings, line)
+					continue
+				}
+
+				ss := strings.Split(line, " = ")
+				ss[1] = strings.TrimLeft(ss[1], "&(&")
+				ss[1] = strings.TrimRight(ss[1], ")[i];")
+				subb := p.Subsystems[sub.Name]
+				v := subb.Variables[ss[1]]
+				line = ss[0] + " = &(&" + v.Name + ")[i*" + strconv.Itoa(v.OneSize()) + "];"
+				lstrings = append(lstrings, line)
+
+			}
+		}
+		if strings.Contains(line, "uspaint8") {
+			continue
+		}
 		ls := strings.Split(line, " ")
 		if len(ls) != 2 {
+			lstrings = append(lstrings, line)
 			continue
 		}
 		if strings.Contains(ls[0], "ss") && strings.Contains(ls[1], "va") {
@@ -135,6 +170,9 @@ func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
 				r = ".l=0;"
 			} else if ls[0] == "sslong" {
 				r = ".c=0;"
+			} else {
+				lstrings = append(lstrings, line)
+				continue
 			}
 			tvar[ls[1]] = r
 			continue

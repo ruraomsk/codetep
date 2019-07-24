@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -28,7 +29,7 @@ func (p *Project) MakeMaster(prPath string) error {
 
 		defer sw.Close()
 		sw.WriteString("#ifndef " + strings.ToUpper(s.Name) + "_H\n")
-		sw.WriteString("#defile " + strings.ToUpper(s.Name) + "_H\n")
+		sw.WriteString("#define " + strings.ToUpper(s.Name) + "_H\n")
 		sub := p.Subsystems[s.Name]
 		model := p.Models[sub.Model.Name]
 		sw.WriteString("// Подсистема  " + s.Name + ":" + s.Description + "\n")
@@ -54,18 +55,16 @@ func (p *Project) MakeMaster(prPath string) error {
 			sw.WriteString("SetupUDP setUDP ={\"" + s.Main + "\\0\",5432,\"" + s.Second + "\\0\",5432,BUFFER,sizeof(BUFFER),};\n")
 			sw.WriteString("int master=1,nomer=1;\n")
 		}
-		for i := 0; i < len(sub.Vars.ListVariable); i++ {
-			v := sub.Vars.ListVariable[i]
+		for _, v := range sub.Vars.ListVariable {
 			sw.WriteString("#define " + v.Name + "\tBUFFER[" + strconv.Itoa(v.Address) + "]\t// " + v.Description + "\n")
 			sw.WriteString("#define id" + v.Name + "\t" + strconv.Itoa(v.ID) + "\t// " + v.Description + "\n")
 		}
 		sw.WriteString("#pragma pack(push,1)\n")
 		sw.WriteString("static VarCtrl allVariables[]={ \t\t\t //Описание всех переменных\n")
-		for i := 0; i < len(sub.Vars.ListVariable); i++ {
-			v := sub.Vars.ListVariable[i]
-			sw.WriteString("\t " + strconv.Itoa(v.ID) + "\t," + v.Format + "\t," + v.Size + "\t,&" + v.Name + "},\t//" + v.Description + "\n")
+		for _, v := range sub.Vars.ListVariable {
+			sw.WriteString("\t{" + strconv.Itoa(v.ID) + "\t," + v.Format + "\t," + v.Size + "\t,&" + v.Name + "},\t//" + v.Description + "\n")
 		}
-		sw.WriteString("\t{-1,0,NULL},\n}\n")
+		sw.WriteString("\t{-1,0,NULL},\n};\n")
 		sw.WriteString("static char NameSaveFile[]=\"" + sub.NameSaveFile + "\\0\"; //Имя файла сохранения переменных\n")
 		sw.WriteString("#pragma pop\n")
 		sw.WriteString("static VarSaveCtrl saveVariables[]={\t//Id переменных для сохранения\n")
@@ -80,8 +79,27 @@ func (p *Project) MakeMaster(prPath string) error {
 			di := "#pragma pack(push,1)\nstatic ModbusRegister di_" + mb.Name + "[]={\n"
 			ir := "#pragma pack(push,1)\nstatic ModbusRegister ir_" + mb.Name + "[]={\n"
 			hr := "#pragma pack(push,1)\nstatic ModbusRegister hr_" + mb.Name + "[]={\n"
+			regs := make([]Register, 0)
 			for _, r := range mb.Registers {
-				str := "\t{&" + r.Name + "," + strconv.Itoa(r.Format) + "," + strconv.Itoa(r.Address) + "},\t//" + r.Description + "\n"
+				regs = append(regs, r)
+			}
+
+			sort.Slice(regs, func(i, j int) bool { return regs[i].Address < regs[j].Address })
+
+			for _, r := range regs {
+				format := "0"
+				switch r.Type {
+				case 0:
+					format = "1"
+				case 1:
+					format = "1"
+				case 2:
+					format = strconv.Itoa(r.Format)
+				case 3:
+					format = strconv.Itoa(r.Format)
+				}
+
+				str := "\t{&" + r.Name + "," + format + "," + strconv.Itoa(r.Address) + "},\t//" + r.Description + "\n"
 				switch r.Type {
 				case 0:
 					coil += str
@@ -93,10 +111,10 @@ func (p *Project) MakeMaster(prPath string) error {
 					hr += str
 				}
 			}
-			coil += "\t{NULL,0,0},\n}\n"
-			di += "\t{NULL,0,0},\n}\n"
-			ir += "\t{NULL,0,0},\n}\n"
-			hr += "\t{NULL,0,0},\n}\n"
+			coil += "\t{NULL,0,0},\n};\n"
+			di += "\t{NULL,0,0},\n};\n"
+			ir += "\t{NULL,0,0},\n};\n"
+			hr += "\t{NULL,0,0},\n};\n"
 			sw.WriteString(coil)
 			sw.WriteString("#pragma pop\n")
 			sw.WriteString(di)
@@ -113,7 +131,7 @@ func (p *Project) MakeMaster(prPath string) error {
 			} else {
 				modStr += "0"
 			}
-			modStr += "," + mb.Port + ",&coil_" + mb.Name + "[0],&di_" + mb.Name + "[0],&di_" + mb.Name + "[0],&hr_" + mb.Name + "[0]"
+			modStr += "," + mb.Port + ",&coil_" + mb.Name + "[0],&di_" + mb.Name + "[0],&ir_" + mb.Name + "[0],&hr_" + mb.Name + "[0]"
 			modStr += ",NULL"
 			if mb.IsMaster() {
 				modStr += "," + mb.Name + "_ip1"
@@ -132,10 +150,10 @@ func (p *Project) MakeMaster(prPath string) error {
 			sw.WriteString(dev.MakeDriverTable(p.DefDrivers))
 		}
 		sw.WriteString("#pragma pack(push,1)\n")
-		sw.WriteString("static Drive drivers[]={\n")
+		sw.WriteString("static Driver drivers[]={\n")
 		for _, dev := range sub.RealDevices {
 			drv := p.DefDrivers.Drivers[dev.Driver]
-			sw.WriteString("\t{" + drv.Code + ",0x" + dev.Slot + "," + drv.LenData + ",def_buf_" + dev.Name + ",&table_" + dev.Name + "},\t//" + dev.Description + "\n")
+			sw.WriteString("\t{" + drv.Code + ",0x" + dev.Slot + "," + drv.LenInit + "," + drv.LenData + ",def_buf_" + dev.Name + ",&table_" + dev.Name + "},\t//" + dev.Description + "\n")
 		}
 		sw.WriteString("\t{0,0,0,0,NULL,NULL},\n};\n")
 		sw.WriteString("#pragma pop\n")
@@ -188,7 +206,7 @@ func (p *Project) MakeMainC(prPath string) error {
 	for _, s := range p.Subs {
 		sub := p.Subsystems[s.Name]
 		model := p.Models[sub.Model.Name]
-		path := prPath + "/" + s.Path + "/src/main.c"
+		path := prPath + "/" + s.Path + "/src/mainfp.c"
 		path = RepairPath(path)
 		err := os.Remove(path)
 		// if err != nil {
@@ -217,7 +235,7 @@ func (p *Project) MakeMainC(prPath string) error {
 		for sReader.Scan() {
 			line := sReader.Text()
 			if !strings.Contains(line, "%attach_") {
-				sw.WriteString(line)
+				sw.WriteString(line + "\n")
 				continue
 			}
 			us := strings.Split(line, "_")
@@ -226,8 +244,9 @@ func (p *Project) MakeMainC(prPath string) error {
 			}
 			nameFile := model.AttachPath(us[1])
 			if nameFile == "" {
-				err = fmt.Errorf("Error! В подсистеме " + sub.Name + " при генерации main.c нет вставки " + us[1])
-				return err
+				// err = fmt.Errorf("Error! В подсистеме " + sub.Name + " при генерации main.c нет вставки " + us[1])
+				// return err
+				continue
 			}
 			pp := lpath + nameFile + ".c"
 			buf, err := ioutil.ReadFile(pp)
@@ -235,8 +254,13 @@ func (p *Project) MakeMainC(prPath string) error {
 				err = fmt.Errorf("Error! В подсистеме " + sub.Name + " при генерации main.c нет " + pp + "!")
 				return err
 			}
-			sw.WriteString(string(buf))
+			ssline := string(buf)
+			ssline = strings.Replace(ssline, "%NetBlKey%", "id"+sub.Netblkey.Name, 1)
+
+			sw.WriteString(ssline + "\n")
 		}
+		file.Close()
+		sw.Close()
 	}
 	return nil
 }

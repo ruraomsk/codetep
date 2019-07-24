@@ -84,6 +84,8 @@ type Subsystem struct {
 	SizeBuffer   int
 	NameSaveFile string
 	IniSignal    IniSignal
+	LastID       int
+	Step         string
 }
 
 //ToString подсистему в строку
@@ -140,7 +142,7 @@ type Delay struct {
 func (s *Subsystem) MakeDelayHeader() string {
 	res := ""
 	if s.Netblkey.Name != "" {
-		res += "int freebuf=0;\n"
+		res += "int freebuff=0;\n"
 	}
 	if s.Delay.Time != "" {
 		res += "int delay=0;\n"
@@ -152,20 +154,23 @@ func (s *Subsystem) MakeDelayHeader() string {
 func (s *Subsystem) MakeMainCycleFunc() string {
 	res := "void MainCycle(void){\n"
 
-	if s.Netblkey.Name == "" && s.Delay.Time == "" {
+	if s.Key.Name == "" && s.Delay.Time == "" {
 		res += "\tScheme();\n"
 	} else {
-		res += "\tif ((getAsShort(" + s.Netblkey.Name + ") == 2) || (getAsShort(" + s.Netblkey.Name + ") == 3)) {\n"
+		res += "\tif ((getAsShort(id" + s.Key.Name + ") == 2) || (getAsShort(id" + s.Key.Name + ") == 3)) {\n"
 		if s.Model.Name != "PTI" {
-			res += "\t\tif(delay++<200) return;\n"
+			res += "\t\tif(delay++<(" + s.Delay.Time + "/" + s.Step + ")) return;\n"
 			res += "\t\tdelay=delay>32000?32000:delay;\n"
 		}
 		res += "\t\tfreebuff = 0;\n"
 		res += "\t\tScheme();\n"
 		res += "\t} else {\n"
+		if s.Delay.Time != "" {
+			res += "\t\tdelay=0;\n"
+		}
 		res += "\t\tif (freebuff) return;\n"
 		res += "\t\tfreebuff = 1;\n\t\tmemset(BUFFER, 0, SIZE_BUFFER);\n"
-		res += "\t\tInitSetConst();\n\t\tZeroVar();\n"
+		res += "\t\tInitSetConst();\n"
 		res += "\t\tif (SimulOn) initAllSimul(CodeSub, drivers, SimulIP, SimulPort);\n"
 
 		if s.Model.Name == "PTI" {
@@ -315,8 +320,8 @@ type Variable struct {
 	Address     int
 }
 
-//FullSize возвращает размер в байтах вместе с байтом достоверности
-func (v *Variable) FullSize() int {
+//OneSize Размерность одного элемента
+func (v *Variable) OneSize() int {
 	size := 0
 	format, _ := strconv.Atoi(v.Format)
 	if format == 1 {
@@ -330,8 +335,13 @@ func (v *Variable) FullSize() int {
 	} else if format == 18 {
 		size = 2
 	}
+	return size
+}
+
+//FullSize возвращает размер в байтах вместе с байтом достоверности
+func (v *Variable) FullSize() int {
 	res, _ := strconv.Atoi(v.Size)
-	return size * res
+	return v.OneSize() * res
 }
 func (v *Variable) getFunctionSet() string {
 	format, _ := strconv.Atoi(v.Format)

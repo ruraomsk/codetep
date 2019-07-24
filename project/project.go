@@ -38,6 +38,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 		if sub.Name == name {
 			subb := new(Subsystem)
 			subb.Name = name
+			subb.Step = sub.Step
 			namefile := RepairPath(p.Path + "/" + sub.Path + "/" + sub.File + ".xml")
 			buf, err := ioutil.ReadFile(namefile)
 			if err != nil {
@@ -75,6 +76,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 
 			}
 			subb.SizeBuffer = fullSize
+			subb.LastID = id
 			//Load Saves section
 			namefile = RepairPath(p.Path + "/" + sub.Path + "/" + subb.Saves.XML + ".xml")
 			buf, err = ioutil.ReadFile(namefile)
@@ -142,7 +144,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 					fmt.Println(err.Error())
 					return nil, err
 				}
-
+				subb.IniSignal.Isignals = ini.Isignals
 			}
 			return subb, err
 		}
@@ -152,7 +154,7 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 
 //AppendNewVariables добавить переменные из внутреннего
 func (s *Subsystem) AppendNewVariables(vars map[string]string) {
-	id := 30000
+	id := s.LastID
 	for name, st := range vars {
 		v := new(Variable)
 		v.Name = name
@@ -160,7 +162,7 @@ func (s *Subsystem) AppendNewVariables(vars map[string]string) {
 		if strings.Contains(st, ".b=0") {
 			v.Format = "1"
 		} else if strings.Contains(st, ".i=0") {
-			v.Format = "3"
+			v.Format = "5"
 		} else if strings.Contains(st, ".f=0") {
 			v.Format = "8"
 		} else if strings.Contains(st, ".l=0") {

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"rura/codetep/project"
 )
 
@@ -11,7 +12,12 @@ func main() {
 	fmt.Println("Начало работы...")
 	prPath := ""
 	if len(os.Args) == 1 {
-		prPath = "/home/rura/dataSimul/prnew"
+		if runtime.GOOS == "linux" {
+			prPath = "/home/rura/dataSimul/pr"
+		} else {
+			prPath = "d:/md/pti/pr"
+
+		}
 	} else {
 		prPath = os.Args[1]
 	}
@@ -26,9 +32,30 @@ func main() {
 		return
 	}
 	pr.Models, err = project.LoadAllModels(prPath + "/settings/models")
+	if err != nil {
+		fmt.Println("Найдены ошибки " + err.Error())
+		return
+	}
+	result := pr.VerifyAllVariables()
+	if result != "" {
+		fmt.Println("Найдены ошибки проверке имен " + result)
+		return
+	}
+	result = pr.VerifyAllDevices()
+	if result != "" {
+		fmt.Println("Найдены ошибки проверке устройств " + result)
+		return
+	}
+
 	err = pr.MakeMaster(prPath)
 	if err != nil {
 		fmt.Println(err.Error())
+		return
+	}
+	err = pr.MakeMainC(prPath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 	fmt.Println("Конец работы")
 }

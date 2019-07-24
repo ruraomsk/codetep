@@ -71,6 +71,7 @@ func (pr *Project) VerifyAllVariables() string {
 					continue
 
 				}
+
 			}
 		}
 	}

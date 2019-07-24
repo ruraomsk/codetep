@@ -65,6 +65,7 @@ func (m *ModelXML) ActionContain(action string) bool {
 
 //AttachPath return name file for any id or null string if nit found
 func (m *ModelXML) AttachPath(id string) string {
+	id = strings.Replace(id, "%", "", 1)
 	for _, att := range m.ModifC.Attachs {
 		if att.ID == id {
 			return att.File
