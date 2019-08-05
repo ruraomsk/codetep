@@ -3,6 +3,7 @@ package project
 import (
 	"encoding/json"
 	"encoding/xml"
+	"sort"
 	"strconv"
 )
 
@@ -120,6 +121,9 @@ func (dev *Device) MakeDriverTable(div Drivers) string {
 	rez += "#pragma pop\n"
 	rez += "#pragma pack(push,1)\n"
 	rez += "static DriverRegister def_buf_" + dev.Name + "[]={\n"
+
+	sort.Slice(dev.Defs, func(i, j int) bool { return dev.Defs[i].Name < dev.Defs[j].Name })
+
 	for _, def := range dev.Defs {
 		s := d.MapSignals[def.DriverName]
 		rez += "\t{&" + def.Name + "," + s.Format + "," + s.Address + "},\n"

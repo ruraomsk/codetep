@@ -74,6 +74,7 @@ func (p *Project) MakeMaster(prPath string) error {
 		}
 		sw.WriteString("\t{0,NULL}\n};\n")
 		modStr := "static ModbusDevice modbuses[]={\n"
+		sort.Slice(sub.Modbuses, func(i, j int) bool { return sub.Modbuses[i].Port < sub.Modbuses[j].Port })
 		for _, mb := range sub.Modbuses {
 			coil := "#pragma pack(push,1)\nstatic ModbusRegister coil_" + mb.Name + "[]={\n"
 			di := "#pragma pack(push,1)\nstatic ModbusRegister di_" + mb.Name + "[]={\n"
@@ -146,19 +147,31 @@ func (p *Project) MakeMaster(prPath string) error {
 		sw.WriteString(modStr)
 		sw.WriteString("\t{0,-1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0},\n};\n")
 		sw.WriteString("#pragma pop\n")
+		realDevice := make([]Device, 0, len(sub.RealDevices))
 		for _, dev := range sub.RealDevices {
+			realDevice = append(realDevice, dev)
+		}
+		sort.Slice(realDevice, func(i, j int) bool { return realDevice[i].Name < realDevice[j].Name })
+		for _, dev := range realDevice {
 			sw.WriteString(dev.MakeDriverTable(p.DefDrivers))
 		}
 		sw.WriteString("#pragma pack(push,1)\n")
 		sw.WriteString("static Driver drivers[]={\n")
-		for _, dev := range sub.RealDevices {
+
+		for _, dev := range realDevice {
 			drv := p.DefDrivers.Drivers[dev.Driver]
 			sw.WriteString("\t{" + drv.Code + ",0x" + dev.Slot + "," + drv.LenInit + "," + drv.LenData + ",def_buf_" + dev.Name + ",&table_" + dev.Name + "},\t//" + dev.Description + "\n")
 		}
 		sw.WriteString("\t{0,0,0,0,NULL,NULL},\n};\n")
 		sw.WriteString("#pragma pop\n")
 		sw.WriteString("void InitSetConst(void){\t//Инициализация переменных для хранения\n")
+		sliceSaves := make([]Save, 0, len(sub.MapSaves))
 		for _, sv := range sub.MapSaves {
+			sliceSaves = append(sliceSaves, sv)
+		}
+		sort.Slice(sliceSaves, func(i, j int) bool { return sliceSaves[i].Name < sliceSaves[j].Name })
+
+		for _, sv := range sliceSaves {
 			v := sub.Variables[sv.Name]
 			fname := v.getFunctionSet()
 			sw.WriteString("\t" + fname + "(" + strconv.Itoa(v.ID) + "," + sv.Value + ");\n")
