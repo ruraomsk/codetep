@@ -175,5 +175,21 @@ func (s *Subsystem) AppendNewVariables(vars map[string]string) {
 		s.SizeBuffer += v.FullSize()
 		s.Variables[v.Name] = *v
 		s.Vars.ListVariable = append(s.Vars.ListVariable, *v)
+
 	}
+	s.LastID = id
+}
+
+//AppendVar add vars to listVariables
+func (p *Project) AppendVar() error {
+	for _, s := range p.Subs {
+		sub := p.Subsystems[s.Name]
+
+		_, tvars, err := p.LoadShema(s)
+		if err != nil {
+			return err
+		}
+		sub.AppendNewVariables(tvars)
+	}
+	return nil
 }
