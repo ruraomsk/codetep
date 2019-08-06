@@ -55,6 +55,7 @@ func (p *Project) MakeMaster(prPath string) error {
 			sw.WriteString("SetupUDP setUDP ={\"" + s.Main + "\\0\",5432,\"" + s.Second + "\\0\",5432,BUFFER,sizeof(BUFFER),};\n")
 			sw.WriteString("int master=1,nomer=1;\n")
 		}
+		sort.Slice(sub.Vars.ListVariable, func(i, j int) bool { return sub.Vars.ListVariable[i].Name < sub.Vars.ListVariable[j].Name })
 		for _, v := range sub.Vars.ListVariable {
 			sw.WriteString("#define " + v.Name + "\tBUFFER[" + strconv.Itoa(v.Address) + "]\t// " + v.Description + "\n")
 			sw.WriteString("#define id" + v.Name + "\t" + strconv.Itoa(v.ID) + "\t// " + v.Description + "\n")

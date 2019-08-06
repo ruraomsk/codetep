@@ -122,7 +122,11 @@ func (dev *Device) MakeDriverTable(div Drivers) string {
 	rez += "#pragma pack(push,1)\n"
 	rez += "static DriverRegister def_buf_" + dev.Name + "[]={\n"
 
-	sort.Slice(dev.Defs, func(i, j int) bool { return dev.Defs[i].Name < dev.Defs[j].Name })
+	sort.Slice(dev.Defs, func(i, j int) bool {
+		si, _ := strconv.Atoi(d.MapSignals[dev.Defs[i].DriverName].Address)
+		sj, _ := strconv.Atoi(d.MapSignals[dev.Defs[j].DriverName].Address)
+		return si < sj
+	})
 
 	for _, def := range dev.Defs {
 		s := d.MapSignals[def.DriverName]
