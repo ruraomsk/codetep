@@ -365,7 +365,7 @@ func (v *Variable) getFunctionSet() string {
 
 //ToString возвращает в символьном виде
 func (v *Variable) ToString() string {
-	return "\t" + v.Name + "\t:" + v.Description + "\t" + v.Format + "\t" + v.Size + "\n"
+	return "\t" + strconv.Itoa(v.ID) + "\t" + v.Name + "\t:" + v.Description + "\t" + v.Format + "\t" + v.Size + "\n"
 }
 
 //IniSignal define init signals for main header

@@ -152,12 +152,26 @@ func (p *Project) LoadSubsystem(name string) (*Subsystem, error) {
 	return nil, fmt.Errorf("Error! Нет такой подсистемы %s", name)
 }
 
+type vV struct {
+	name string
+	body string
+}
+
 //AppendNewVariables добавить переменные из внутреннего
 func (s *Subsystem) AppendNewVariables(vars map[string]string) {
 	id := s.LastID
-	for name, st := range vars {
+	t := make([]vV, 0, len(vars))
+	for name, body := range vars {
+		v := new(vV)
+		v.name = name
+		v.body = body
+		t = append(t, *v)
+	}
+	sort.Slice(t, func(i, j int) bool { return t[i].name < t[j].name })
+	for _, r := range t {
 		v := new(Variable)
-		v.Name = name
+		v.Name = r.name
+		st := r.body
 		v.Address = s.SizeBuffer
 		if strings.Contains(st, ".b=0") {
 			v.Format = "1"
@@ -169,7 +183,7 @@ func (s *Subsystem) AppendNewVariables(vars map[string]string) {
 			v.Format = "11"
 		}
 		v.Size = "1"
-		v.Description = "Внутренняя переменная " + name
+		v.Description = "Внутренняя переменная " + r.name
 		v.ID = id
 		id++
 		s.SizeBuffer += v.FullSize()
