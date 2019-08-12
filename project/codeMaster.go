@@ -69,7 +69,12 @@ func (p *Project) MakeMaster(prPath string) error {
 		sw.WriteString("static char NameSaveFile[]=\"" + sub.NameSaveFile + "\\0\"; //Имя файла сохранения переменных\n")
 		sw.WriteString("#pragma pop\n")
 		sw.WriteString("static VarSaveCtrl saveVariables[]={\t//Id переменных для сохранения\n")
+		saves := make([]Save, 0)
 		for _, sv := range sub.MapSaves {
+			saves = append(saves, sv)
+		}
+		sort.Slice(saves, func(i, j int) bool { return saves[i].Name < saves[j].Name })
+		for _, sv := range saves {
 			v := sub.Variables[sv.Name]
 			sw.WriteString("\t{" + strconv.Itoa(v.ID) + ",\"" + v.Name + "\\0\"},\t//" + v.Description + "\n")
 		}
