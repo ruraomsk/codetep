@@ -109,7 +109,8 @@ func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
 	path := RepairPath(p.Path + "/" + sub.Path + "/scheme/Scheme.h")
 	file, err := os.Open(path)
 	if err != nil {
-		return lstrings, tvar, err
+		lstrings = append(lstrings, "void Scheme(void){}\n")
+		return lstrings, tvar, nil
 	}
 	dec := charmap.Windows1251.NewDecoder()
 	defer file.Close()
@@ -128,7 +129,7 @@ func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
 			for sReader.Scan() {
 				line, err = dec.String(sReader.Text())
 				if err != nil {
-					return lstrings, tvar, err
+					return lstrings, tvar, nil
 				}
 				if strings.Contains(line, "}") {
 					// lstrings = append(lstrings, line)
