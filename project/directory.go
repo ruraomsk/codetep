@@ -110,6 +110,8 @@ func (p *Project) LoadShema(sub Sub) ([]string, map[string]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		lstrings = append(lstrings, "void Scheme(void){}\n")
+		lstrings = append(lstrings, "void InitInternalParametr(void){}\n")
+
 		return lstrings, tvar, nil
 	}
 	dec := charmap.Windows1251.NewDecoder()
